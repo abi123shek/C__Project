@@ -1,0 +1,42 @@
+pipeline {
+     agent { label "test"}
+     stages {
+         stage("code") {
+             steps {
+                 git url: "https://github.com/abi123shek/CI_Practise.git", branch: "main"
+                 echo "Code cloned successfully"
+             }
+         }
+         stage("build") {
+             steps {
+                 sh 'ls -l'
+               
+                 sh 'docker build . -t basic-app:latest'
+                 echo "Code build successfully"
+             }
+         }
+          stage("push to dockerhub") {
+             steps {
+                  echo "Connecting to docker hub"
+                  withCredentials([usernamePassword('credentialsId':"DockerConfig", 
+                  passwordVariable:"DockerConfigpass", usernameVariable:"DockerConfigUser")]){
+                      
+                 sh "docker login -u ${env.DockerConfigUser} -p ${env.DockerConfigpass}" 
+                 sh "docker image tag basic-app:latest  ${env.DockerConfigUser}/basic-app:latest"
+                 sh "docker push ${env.DockerConfigUser}/basic-app:latest"
+                 echo "image push successfully"
+                  }
+             }
+         }
+         
+         
+
+         stage("deploy") {
+             steps {
+                //  sh 'docker rm $(docker ps -a -q) || true'
+                 sh "docker run -p 8080:80 -d basic-app:latest" 
+                 echo "application deployed successfully"
+             }
+         }
+     }
+ }
